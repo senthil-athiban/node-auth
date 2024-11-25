@@ -38,8 +38,17 @@ router.post("/login", async (req: Request, res: Response) : Promise<any> => {
     });
 
     if(!userExists) {
-        return res.status(400).json({message: "No user found"});
+        return res.status(404).json({message: "No user found"});
     }
 
     const comparePassword = await bcryptjs.compare(password, userExists.password);
+
+    if(!comparePassword) {
+        return res.status(401).json({message: "Invalid credentials"});
+    }
+
+    return res.status(200).json({
+        message: "Login succesfully",
+        user: userExists
+    })
 })
