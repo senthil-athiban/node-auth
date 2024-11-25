@@ -8,7 +8,6 @@ const router = Router();
 
 router.post("/signup", async (req: Request, res: Response): Promise<any> => {
   // Handles user sign-up.
-  console.log('username : ', req.body);
   const { username, password } = req.body;
   const existingUser = await UserModel.findOne({
     where: {
