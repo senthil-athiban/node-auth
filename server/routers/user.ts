@@ -48,19 +48,31 @@ router.post("/login", async (req: Request, res: Response): Promise<any> => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    console.log('reached 1 : ', process.env.JWT_SECRET_KEY);
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       { userId: userExists._id },
-      process.env.JWT_SECRET_KEY!,
+      process.env.ACCESS_SECRET_KEY!,
       {
-        expiresIn: "1hr",
+        expiresIn: "15s",
       }
     );
-    console.log('reached 2');
+
+    const refreshToken = jwt.sign(
+      {userId: userExists._id},
+      process.env.REFRESH_SECRET_KEY!,
+      { expiresIn: '1hr'}
+    );
+
+    res.cookie('jwt', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60  * 1000
+    });
+    
     return res.status(200).json({
       message: "Login succesfully",
       user: userExists,
-      token,
+      accessToken,
     });
   } catch (error) {
     return res.status(500).json({ error: "Login failed" });
