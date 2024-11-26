@@ -32,11 +32,8 @@ router.post("/signup", async (req: Request, res: Response): Promise<any> => {
 router.post("/login", async (req: Request, res: Response): Promise<any> => {
   try {
     const { username, password } = req.body;
-console.log("username : ", username);
+
     const userExists = await UserModel.findOne({username});
-
-    console.log("userExists", userExists);
-
     
     if (!userExists) {
       return res.status(404).json({ message: "No user found" });
