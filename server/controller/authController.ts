@@ -2,7 +2,14 @@ import { Request, Response } from "express";
 import UserModel from "../models/userSchema";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { authService, emailService, tokenService } from "../services";
+import {
+  authService,
+  emailService,
+  tokenService,
+  userService,
+} from "../services";
+import { tokenTypes } from "../config/tokens";
+import { Token } from "../models/tokenSchema";
 
 const signup = async (req: Request, res: Response) => {
   const { username, password } = req.body;
@@ -152,18 +159,44 @@ const sendEmailVerification = async (req: Request, res: Response) => {
   const verifyToken = await tokenService.generateVerifyEmailToken(username);
   await emailService.sendEmailVerification(username, verifyToken);
   res.status(201).send();
-}
+};
 
 const verifyEmail = async (req: Request, res: Response) => {
-  const token : string = req.query.token as string;
+  const token: string = req.query.token as string;
   await authService.verifyEmail(token);
-  res.status(204).json({message: 'Email verified'});
+  res.status(204).json({ message: "Email verified" });
+};
+
+const forgotPassword = async (req: Request, res: Response) => {
+  const username = req.body.username;
+  const user = await userService.getUserById(username);
+  const resetPasswordToken = await tokenService.generateResetPasswordToken(
+    user.username
+  );
+  await emailService.sendResetPasswordEmail(username, resetPasswordToken);
+  res.status(201).json({message: 'Verification email has been sent successfully'});;
+};
+
+const resetPassword = async (req: Request, res: Response) => {
+  const token = req.query.token as string;
+  const newPassword = req.body.password;
+
+  const verifiedToken = await tokenService.verifyToken(token, tokenTypes.RESET_PASSWORD);
+  const user = await userService.getUserById(verifiedToken.user!);
+
+  const hashedPassword = await bcryptjs.hash(newPassword, 10);
+  await userService.updateUserById(user.username, { password: hashedPassword});
+
+  await Token.deleteMany({user: user?.username, token, type: tokenTypes.RESET_PASSWORD});
+  res.status(201).json({"message": 'Sucess'});
 }
 export {
-    login,
-    signup,
-    refreshToken,
-    verifyUser,
-    sendEmailVerification,
-    verifyEmail
-}
+  login,
+  signup,
+  refreshToken,
+  verifyUser,
+  sendEmailVerification,
+  verifyEmail,
+  forgotPassword,
+  resetPassword
+};

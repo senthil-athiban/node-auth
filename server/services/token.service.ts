@@ -16,8 +16,16 @@ const generateToken = (userId: string, expires: any, type: string, secret = proc
 const saveToken = async (token: string, user: string, expires: any, type: string) => {
     const newToken = new Token({user, token, expires, type});
     return await newToken.save();
+};
+
+const generateResetPasswordToken = async (username: string) => {
+    const expires = moment().add(10,'minutes');
+    const resetPasswordToken = generateToken(username, expires, tokenTypes.RESET_PASSWORD);
+    await Token.create({token: resetPasswordToken, user: username, type: tokenTypes.RESET_PASSWORD, blackListed: true});
+    return resetPasswordToken;
 }
-const generateVerifyEmailToken = async (userId:any) => {
+
+const generateVerifyEmailToken = async (userId:string) => {
     const expires = moment().add('10', 'minutes');
     const verifyEmailToken = generateToken(userId, expires, tokenTypes.VERIFY_EMAIL);
     await saveToken(verifyEmailToken, userId, expires, tokenTypes.VERIFY_EMAIL);
@@ -33,4 +41,4 @@ const verifyToken = async (token: string, type: string) => {
     return tokenDoc;
 }
 
-export { generateToken, generateVerifyEmailToken, verifyToken };
+export { generateToken, generateVerifyEmailToken, verifyToken, generateResetPasswordToken};
