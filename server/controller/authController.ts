@@ -10,22 +10,18 @@ import {
 } from "../services";
 import { tokenTypes } from "../config/tokens";
 import { Token } from "../models/tokenSchema";
+import { OTPModel } from "../models/otpSchema";
 
 const signup = async (req: Request, res: Response) => {
   const { username, password } = req.body;
-  const existingUser = await User.findOne({ username });
-
-  if (existingUser)
-    return res.status(400).json({ message: "User Already Exists" });
-
-  const hashedPassword = await bcryptjs.hash(password, 10);
-
-  const user = new User({ username, password: hashedPassword });
+  const existingUser = await User.findOne({username});
+  if (existingUser) {
+    res.status(400).json({message: 'User already exists'});
+  }
+  const user = new User({ username, password });
   await user.save();
-
   return res.status(200).json({
-    message: "User Created Successfully",
-    user,
+    message: "User Created Successfully"
   });
 };
 
@@ -33,11 +29,7 @@ const login = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 
-    const userExists = await User.findOne({ username });
-
-    if (!userExists) {
-      return res.status(404).json({ message: "No user found" });
-    }
+    const userExists = await userService.getUserById(username);
 
     const comparePassword = await bcryptjs.compare(
       password,
@@ -48,27 +40,22 @@ const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const accessToken = jwt.sign(
-      { userId: userExists.username },
-      process.env.ACCESS_SECRET_KEY!,
-      {
-        expiresIn: "15m",
-      }
-    );
+    // if user enabled 2FA
+    if (userExists.isMFAEnabled) {
+      // create mfa token and update it into user model
+      const MFAToken = await tokenService.generateOTPToken(userExists.username);
 
-    const refreshToken = jwt.sign(
-      { userId: userExists.username },
-      process.env.REFRESH_SECRET_KEY!,
-      { expiresIn: "1hr" }
-    );
+      // then send otp email
+      await emailService.sendOTPEmail(username, MFAToken);
+      await OTPModel.deleteMany({ user: username, otpToken: MFAToken });
 
-    const hashedRefreshToken = await bcryptjs.hash(refreshToken, 10);
+      return res
+        .status(202)
+        .json({ message: "OTP sent successfully, please check your email" });
+    }
 
-    await User.findOneAndUpdate(
-      { username },
-      { refreshtoken: hashedRefreshToken },
-      { new: true }
-    );
+    const { accessToken, refreshToken } = await tokenService.generateAuthTokens(userExists.username);
+    await userService.updateUserById(userExists.username, { refreshtoken: refreshToken });
 
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
@@ -88,60 +75,39 @@ const login = async (req: Request, res: Response) => {
 };
 
 const refreshToken = async (req: Request, res: Response) => {
-  {
-    try {
-      const refreshToken = req.cookies.jwt;
+  try {
+    const refreshToken = req.cookies.jwt;
 
-      if (!refreshToken) {
-        res.status(401).json({ error: "Un authorized" });
-      }
-
-      const decodedToken = jwt.verify(
-        refreshToken,
-        process.env.REFRESH_SECRET_KEY!
-      );
-
-      //@ts-ignore
-      const userId = decodedToken.userId;
-      const user = await User.findOne({ username: userId });
-      if (!user) {
-        res.status(404).json({ message: "No user found" });
-      }
-      const newAccessToken = jwt.sign(
-        { userId: user?.username },
-        process.env.ACCESS_SECRET_KEY!,
-        {
-          expiresIn: "15m",
-        }
-      );
-
-      const newRefreshToken = jwt.sign(
-        { userId: user?.username },
-        process.env.REFRESH_SECRET_KEY!,
-        { expiresIn: "1hr" }
-      );
-
-      await User.findOneAndUpdate(
-        { username: user?.username },
-        { refreshtoken: newRefreshToken },
-        { new: true }
-      );
-
-      res.cookie("jwt", newRefreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-
-      res.status(201).json({
-        message: "Generated new access + refresh token",
-        user,
-        newAccessToken,
-      });
-    } catch (error) {
-      res.status(403).json({ message: "Invalid token" });
+    if (!refreshToken) {
+      res.status(401).json({ error: "Un authorized" });
     }
+
+    const decodedToken = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_SECRET_KEY!
+    );
+
+    const userId = decodedToken.sub as string;
+    const user = await userService.getUserById(userId);
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+      await tokenService.generateAuthTokens(user.username);
+    await userService.updateUserById(user.username, {
+      refreshtoken: newRefreshToken,
+    });
+
+    res.cookie("jwt", newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(201).json({
+      message: "Generated new access + refresh token",
+      newAccessToken,
+    });
+  } catch (error) {
+    res.status(403).json({ message: "Invalid token" });
   }
 };
 
@@ -174,22 +140,54 @@ const forgotPassword = async (req: Request, res: Response) => {
     user.username
   );
   await emailService.sendResetPasswordEmail(username, resetPasswordToken);
-  res.status(201).json({message: 'Verification email has been sent successfully'});;
+  res.status(201).json({ message: "Verification email has been sent successfully" });
 };
 
 const resetPassword = async (req: Request, res: Response) => {
   const token = req.query.token as string;
   const newPassword = req.body.password;
 
-  const verifiedToken = await tokenService.verifyToken(token, tokenTypes.RESET_PASSWORD);
+  const verifiedToken = await tokenService.verifyToken(
+    token,
+    tokenTypes.RESET_PASSWORD
+  );
   const user = await userService.getUserById(verifiedToken.user!);
 
   const hashedPassword = await bcryptjs.hash(newPassword, 10);
-  await userService.updateUserById(user.username, { password: hashedPassword});
+  await userService.updateUserById(user.username, { password: hashedPassword });
 
-  await Token.deleteMany({user: user?.username, token, type: tokenTypes.RESET_PASSWORD});
-  res.status(201).json({"message": 'Sucess'});
-}
+  await Token.deleteMany({
+    user: user?.username,
+    token,
+    type: tokenTypes.RESET_PASSWORD,
+  });
+  res.status(201).json({ message: "Password has been updated successfully" });
+};
+
+const verifyOTP = async (req: Request, res: Response) => {
+  const token = req.query.token as string;
+  const user = await authService.verifyOTP(token);
+
+  const { accessToken, refreshToken } = await tokenService.generateAuthTokens(
+    user.username
+  );
+
+  await userService.updateUserById(user.username, {
+    refreshtoken: refreshToken,
+  });
+  res.cookie("jwt", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  res.status(201).json({
+    message: "Generated new access and refresh token",
+    accessToken,
+  });
+};
+
 export {
   login,
   signup,
@@ -198,5 +196,6 @@ export {
   sendEmailVerification,
   verifyEmail,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  verifyOTP,
 };

@@ -8,7 +8,6 @@ import ApiError from "../utils/apiError";
 const verifyEmail = async (token: string) => {
   try {
     const verifyEmailTokenDoc = await tokenService.verifyToken(token, tokenTypes.VERIFY_EMAIL);
-    console.log("[verifiedToken]", verifyEmailTokenDoc);
     //@ts-ignore
     const user = await User.findOne({ username: verifyEmailTokenDoc.user });
     if (!user) {
@@ -20,8 +19,21 @@ const verifyEmail = async (token: string) => {
     });
     await userService.updateUserById(user.username, { isEmailVerified: true });
   } catch (error) {
-    throw new ApiError(404, "Email verification failed");
+    throw new ApiError(400, "Email verification failed");
   }
 };
 
-export { verifyEmail };
+const verifyOTP = async (token: string) => {
+    try {
+      const verifiedTokenDoc = jwt.verify(token, process.env.OTP_SECRET_KEY!)
+      const user = await User.findOne({username: verifiedTokenDoc.sub, otpCode: token});
+      if(!user) {
+        throw new ApiError(404, 'User not found')
+      }
+      await User.findOneAndUpdate({username: user.username}, { $unset: { otpCode: "" } }, {new: true});
+      return user;
+    } catch (error) {
+      throw new ApiError(400, "Two factor auth verification failed");
+    }
+}
+export { verifyEmail, verifyOTP };

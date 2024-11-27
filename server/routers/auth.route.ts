@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/userMiddleware";
-import { login, refreshToken, signup, verifyUser, sendEmailVerification, verifyEmail, forgotPassword, resetPassword } from "../controller/authController";
+import { login, refreshToken, signup, verifyUser, sendEmailVerification, verifyEmail, forgotPassword, resetPassword, verifyOTP } from "../controller/authController";
 require('dotenv').config();
 
 const router = Router();
@@ -13,5 +13,6 @@ router.post("/verify-email", verifyEmail)
 router.get("/check", verifyUser);
 router.post("/forgot-password", forgotPassword);
 router.post('/reset-password', resetPassword);
+router.post('/verify-otp', verifyOTP)
 
 export const userRouter = router;
