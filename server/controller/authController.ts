@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import UserModel from "../models/userSchema";
+import User from "../models/userSchema";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
@@ -13,14 +13,14 @@ import { Token } from "../models/tokenSchema";
 
 const signup = async (req: Request, res: Response) => {
   const { username, password } = req.body;
-  const existingUser = await UserModel.findOne({ username });
+  const existingUser = await User.findOne({ username });
 
   if (existingUser)
     return res.status(400).json({ message: "User Already Exists" });
 
   const hashedPassword = await bcryptjs.hash(password, 10);
 
-  const user = new UserModel({ username, password: hashedPassword });
+  const user = new User({ username, password: hashedPassword });
   await user.save();
 
   return res.status(200).json({
@@ -33,7 +33,7 @@ const login = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 
-    const userExists = await UserModel.findOne({ username });
+    const userExists = await User.findOne({ username });
 
     if (!userExists) {
       return res.status(404).json({ message: "No user found" });
@@ -64,7 +64,7 @@ const login = async (req: Request, res: Response) => {
 
     const hashedRefreshToken = await bcryptjs.hash(refreshToken, 10);
 
-    await UserModel.findOneAndUpdate(
+    await User.findOneAndUpdate(
       { username },
       { refreshtoken: hashedRefreshToken },
       { new: true }
@@ -103,7 +103,7 @@ const refreshToken = async (req: Request, res: Response) => {
 
       //@ts-ignore
       const userId = decodedToken.userId;
-      const user = await UserModel.findOne({ username: userId });
+      const user = await User.findOne({ username: userId });
       if (!user) {
         res.status(404).json({ message: "No user found" });
       }
@@ -121,7 +121,7 @@ const refreshToken = async (req: Request, res: Response) => {
         { expiresIn: "1hr" }
       );
 
-      await UserModel.findOneAndUpdate(
+      await User.findOneAndUpdate(
         { username: user?.username },
         { refreshtoken: newRefreshToken },
         { new: true }

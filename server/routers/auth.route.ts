@@ -1,17 +1,7 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/userMiddleware";
 import { login, refreshToken, signup, verifyUser, sendEmailVerification, verifyEmail, forgotPassword, resetPassword } from "../controller/authController";
-import UserModel from "../models/userSchema";
-import moment from "moment";
-import { tokenTypes } from "../config/tokens";
-import { Token } from "../models/tokenSchema";
-import ApiError from "../utils/apiError";
 require('dotenv').config();
-
-
-import jwt from "jsonwebtoken";
-import {Request, Response} from "express";
-import { emailService } from "../services";
 
 const router = Router();
 

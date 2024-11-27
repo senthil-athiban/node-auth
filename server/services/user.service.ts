@@ -1,12 +1,12 @@
-import UserModel from "../models/userSchema";
+import User from "../models/userSchema";
 import ApiError from "../utils/apiError";
 
 const updateUserById = async (id: string, contentToUpdate: any) => {
-  const user = await UserModel.findOne({ username: id });
+  const user = await User.findOne({ username: id });
   if (!user) {
     throw new ApiError(404, "User not found");
   }
-  const res = await UserModel.findOneAndUpdate(
+  const res = await User.findOneAndUpdate(
     { username: user.username },
     contentToUpdate,
     { new: true }
@@ -15,7 +15,7 @@ const updateUserById = async (id: string, contentToUpdate: any) => {
 };
 
 const getUserById = async (id: string) => {
-  const user = await UserModel.findOne({username: id});
+  const user = await User.findOne({username: id});
   if(!user) {
     throw new ApiError(404, 'User not found');
   }
