@@ -8,6 +8,9 @@ const userSchema = new Schema({
   },
   password: { type: String, required: true },
   refreshtoken: String,
+  isEmailVerified : {
+    type: Boolean
+  }
 });
 
 const UserModel = mongoose.model("user", userSchema);

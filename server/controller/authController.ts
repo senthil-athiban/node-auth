@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import UserModel from "../models/userSchema";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { authService, emailService, tokenService } from "../services";
 
 const signup = async (req: Request, res: Response) => {
   const { username, password } = req.body;
@@ -44,7 +45,7 @@ const login = async (req: Request, res: Response) => {
       { userId: userExists.username },
       process.env.ACCESS_SECRET_KEY!,
       {
-        expiresIn: "1m",
+        expiresIn: "15m",
       }
     );
 
@@ -145,9 +146,24 @@ const verifyUser = async (req: Request, res: Response) => {
   }
 };
 
+const sendEmailVerification = async (req: Request, res: Response) => {
+  //@ts-ignore
+  const username = req.userId;
+  const verifyToken = await tokenService.generateVerifyEmailToken(username);
+  await emailService.sendEmailVerification(username, verifyToken);
+  res.status(201).send();
+}
+
+const verifyEmail = async (req: Request, res: Response) => {
+  const token : string = req.query.token as string;
+  await authService.verifyEmail(token);
+  res.status(204).json({message: 'Email verified'});
+}
 export {
     login,
     signup,
     refreshToken,
-    verifyUser
+    verifyUser,
+    sendEmailVerification,
+    verifyEmail
 }
