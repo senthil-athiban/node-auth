@@ -76,15 +76,15 @@ const verifyToken = async (token: string, type: string) => {
 };
 
 const generateAuthTokens = async (userId: any) => {
-  const accessTokenExpires = moment().add(15, "minutes");
+  const accessTokenExpires = moment().add(30, "seconds");
   const accessToken = generateToken(
     userId,
     accessTokenExpires,
     tokenTypes.REFRESH,
-    process.env.REFRESH_SECRET_KEY
+    process.env.ACCESS_SECRET_KEY
   );
 
-  const refreshTokenExpires = moment().add(1, "hours");
+  const refreshTokenExpires = moment().add(1, "minute");
   const refreshToken = generateToken(
     userId,
     refreshTokenExpires,

@@ -7,10 +7,11 @@ const router = Router();
 
 router.post("/signup", signup as any);
 router.post("/login", login as any);
-router.post("/refresh", refreshToken);
+//@ts-ignore
+router.get("/refreshToken", refreshToken);
 router.post("/send-verification-email", authMiddleware, sendEmailVerification);
 router.post("/verify-email", verifyEmail)
-router.get("/check", verifyUser);
+router.get("/check", authMiddleware, verifyUser);
 router.post("/forgot-password", forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/verify-otp', verifyOTP)

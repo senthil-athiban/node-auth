@@ -14,9 +14,12 @@ import { OTPModel } from "../models/otpSchema";
 
 const signup = async (req: Request, res: Response) => {
   const { username, password } = req.body;
+  if(!username || !password) {
+    res.status(404).json({message: 'Invalid content'});
+  }
   const existingUser = await User.findOne({username});
   if (existingUser) {
-    res.status(400).json({message: 'User already exists'});
+    return res.status(400).json({message: 'User already exists'});
   }
   const user = new User({ username, password });
   await user.save();
@@ -29,6 +32,9 @@ const login = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 
+    if(!username || !password) {
+      return res.status(404).json({message: 'Invalid content'});
+    }
     const userExists = await userService.getUserById(username);
 
     const comparePassword = await bcryptjs.compare(
@@ -77,9 +83,9 @@ const login = async (req: Request, res: Response) => {
 const refreshToken = async (req: Request, res: Response) => {
   try {
     const refreshToken = req.cookies.jwt;
-
+    console.log("refreshToken: ", refreshToken);
     if (!refreshToken) {
-      res.status(401).json({ error: "Un authorized" });
+      return res.status(401).json({ error: "Un authorized" });
     }
 
     const decodedToken = jwt.verify(
@@ -104,7 +110,7 @@ const refreshToken = async (req: Request, res: Response) => {
 
     res.status(201).json({
       message: "Generated new access + refresh token",
-      newAccessToken,
+      accessToken: newAccessToken,
     });
   } catch (error) {
     res.status(403).json({ message: "Invalid token" });
@@ -113,7 +119,7 @@ const refreshToken = async (req: Request, res: Response) => {
 
 const verifyUser = async (req: Request, res: Response) => {
   try {
-    res.status(201).json({ message: "you are verified" });
+    res.status(200).json({ message: "you are verified" });
   } catch (error) {
     res.status(500).json({ error: "Login failed" });
   }
