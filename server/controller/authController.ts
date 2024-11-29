@@ -194,7 +194,12 @@ const verifyOTP = async (req: Request, res: Response) => {
   });
 };
 
+const googleLogin = async (req: Request, res: Response) => {
+  
+}
+
 export {
+  googleLogin,
   login,
   signup,
   refreshToken,

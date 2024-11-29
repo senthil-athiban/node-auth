@@ -10,8 +10,8 @@ const Signup = () => {
   const axiosPrivate = useAxios();
 
   const { setAuth } = useAuth();
-  const handleClick = async () => {
-    const res = await axiosPrivate.get("/api/v1/user/check");
+  const handleGoogleLogin = async () => {
+    const res = window.open("http://localhost:8080/google-login", "_self");
   };
 
   const handleSubmit = async () => {
@@ -54,7 +54,8 @@ const Signup = () => {
         </button>
       </form>
       <button onClick={handleLogin}>login </button>
-      <button onClick={handleClick}>Verify </button>
+      {/* <button onClick={handleClick}>Verify </button> */}
+      <button onClick={handleGoogleLogin}>Login in using google</button>
     </div>
   );
 };
