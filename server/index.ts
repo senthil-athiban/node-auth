@@ -21,7 +21,7 @@ app.use(cookieSession({
 app.use(passport.session());
 app.use(passport.initialize());
 app.use(cors({origin: [process.env.CLIENT_URL!, "*"], credentials: true}));
-app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true }));
+app.use(session({ secret: process.env.SESSION_SECRET!, resave: true, saveUninitialized: true }));
 app.use(cookieParser());
 app.use("/api/v1/user", userRouter);
 app.use("/", googleRouter);
