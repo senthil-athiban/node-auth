@@ -8,6 +8,7 @@ import "./config/passport";
 import { googleRouter } from "./routers/google.route";
 import passport from "passport";
 import session from "express-session";
+import { githubRouter } from "./routers/github.route";
 require("dotenv").config();
 
 const app = express();
@@ -25,6 +26,7 @@ app.use(session({ secret: process.env.SESSION_SECRET!, resave: true, saveUniniti
 app.use(cookieParser());
 app.use("/api/v1/user", userRouter);
 app.use("/", googleRouter);
+app.use("/", githubRouter);
 app.listen(8080, () => {
     console.log('server started')
     connectDb();
