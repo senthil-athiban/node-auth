@@ -8,6 +8,7 @@ import "./config/passport";
 import { googleRouter } from "./routers/google.route";
 import passport from "passport";
 import session from "express-session";
+require("dotenv").config();
 
 const app = express();
 
@@ -19,7 +20,7 @@ app.use(cookieSession({
 }));
 app.use(passport.session());
 app.use(passport.initialize());
-app.use(cors({origin: ["http://localhost:5173", "*"], credentials: true}));
+app.use(cors({origin: [process.env.CLIENT_URL!, "*"], credentials: true}));
 app.use(session({ secret: 'keyboard cat', resave: true, saveUninitialized: true }));
 app.use(cookieParser());
 app.use("/api/v1/user", userRouter);
