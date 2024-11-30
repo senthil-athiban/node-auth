@@ -14,6 +14,11 @@ const Signup = () => {
     const res = window.open("http://localhost:8080/google-login", "_self");
   };
 
+  const handleGithubLogin = async () => {
+    const res = window.open("http://localhost:8080/auth/github", "_self");
+    console.log("res : ", res);
+  }
+
   const handleSubmit = async () => {
     const res = await axios.post("/api/v1/user/signup", {
       username: name,
@@ -33,6 +38,10 @@ const Signup = () => {
   };
 
 
+  const handleLogout = async () => {
+    const res = await axios.get("/auth/github/logout");
+    console.log("res" , res);
+  }
   return (
     <div>
       <form action="" style={{ display: "flex", flexDirection: "column" }}>
@@ -56,6 +65,8 @@ const Signup = () => {
       <button onClick={handleLogin}>login </button>
       {/* <button onClick={handleClick}>Verify </button> */}
       <button onClick={handleGoogleLogin}>Login in using google</button>
+      <button onClick={handleGithubLogin}>Login in using github</button>
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 };
