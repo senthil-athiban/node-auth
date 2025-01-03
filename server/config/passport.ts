@@ -3,7 +3,19 @@ import passport from "passport";
 
 const GoogleStrategy = require("passport-google-oauth2").Strategy;
 const GitHubStrategy = require("passport-github2").Strategy;
+const SlackStrategy = require("passport-slack-oauth2").Strategy;
 
+passport.use(new SlackStrategy({
+  clientID: process.env.SLACK_CLIENT_ID,
+  clientSecret: process.env.SLACK_CLIENT_SECRET,
+  skipUserProfile: false,
+  scope: ['identity.basic', 'identity.email', 'identity.avatar', 'identity.team']
+},
+(accessToken: any, refreshToken: any, profile: any, done: any) => {
+console.log({accessToken, refreshToken, profile});
+  done(null, profile);
+}
+));
 passport.use(
   new GoogleStrategy(
     {
