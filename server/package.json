@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@slack/web-api": "^7.8.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
     "cookie-parser": "^1.4.7",
@@ -18,6 +19,7 @@
     "passport": "^0.5.3",
     "passport-github2": "^0.1.12",
     "passport-google-oauth2": "^0.2.0",
+    "passport-slack-oauth2": "^1.2.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
   },
